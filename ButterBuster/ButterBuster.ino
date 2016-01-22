@@ -20,7 +20,7 @@
  *  A02 - Left Motor -
  *  B01 - Right Motor +
  *  B02 - Right Motor -
- *  STBY - Analog 0
+ *  STBY - Analog 0 (14)
  *  
  *  
  *  Left Arm - 9
@@ -30,6 +30,7 @@
  *  
  *  Led1 - 13 (Blink)
  *  LEd2 - 6 (PWM)
+ *  NeoPixel - Analog 1 (15)
  *  
  *  FTDI Connector to XBEe
  *
@@ -56,6 +57,7 @@ const int ROLL_PIN = 12;
 const int LED2_PIN = 6;
 const int LED1_PIN = 13;
 const int STBY_PIN = 14;
+const int NEOPIXEL_PIN = 15;
 
 const int TREAD_PINS[2][3] = {{4,7,3}, {8,12,5}}; 
 
