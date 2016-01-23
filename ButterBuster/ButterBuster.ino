@@ -39,6 +39,8 @@
 #include <SoftwareSerial.h>
 #include <Servo.h>
 #include <Commander.h>
+#include <Adafruit_NeoPixel.h>
+
 
 Servo leftWheel, rightWheel;
 Servo rollServo, tiltServo;
@@ -59,7 +61,7 @@ const int LED1_PIN = 13;
 const int STBY_PIN = 14;
 const int NEOPIXEL_PIN = 15;
 
-const int TREAD_PINS[2][3] = {{4,7,3}, {8,12,5}}; 
+const int TREAD_PINS[2][3] = {{2,4,3}, {7,8,5}}; 
 
 //indexes
 const int LEFT_MOTOR = 0;
@@ -73,6 +75,19 @@ const int CCW = -1;
 const int CW = 1;
 const int STOP = 0;
 
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+
+int leftServoVal = 1500;
+int rightServoVal = 1500;
+int rollServoVal = 1500;
+int tiltServoVal = 1500;
+
+int leftTreadDir;
+int rightTreadDir;
+int leftTreadSpeed;
+int rightTreadSpeed;
+
 void setup()
 {
 //   mp3.begin(9600);
@@ -84,7 +99,11 @@ void setup()
 //   SetMusicPlay(0,1);
 //   next();
 
-
+Serial.begin(38400); 
+  leftArm.attach(LEFT_ARM_PIN);
+  rightArm.attach(RIGHT_ARM_PIN);
+  rollServo.attach(TILT_PIN);
+  tiltServo.attach(ROLL_PIN);
   
   pinMode(TREAD_PINS[LEFT_MOTOR][DIR_1_PIN],OUTPUT);
   pinMode(TREAD_PINS[LEFT_MOTOR][DIR_2_PIN],OUTPUT);
@@ -94,27 +113,183 @@ void setup()
   pinMode(LED2_PIN, OUTPUT);
   pinMode(LED1_PIN, OUTPUT);
   pinMode(STBY_PIN, OUTPUT);
-  
-  leftArm.attach(LEFT_ARM_PIN);
-  rightArm.attach(RIGHT_ARM_PIN);
-  rollServo.attach(TILT_PIN);
-  tiltServo.attach(ROLL_PIN);
+  digitalWrite(STBY_PIN, HIGH);
+  digitalWrite(LED1_PIN, HIGH);
 
-  leftArm.writeMicroseconds(1500);
-  rightArm.writeMicroseconds(1500);
-  rollServo.writeMicroseconds(1500);
-  tiltServo.writeMicroseconds(1500);
+  leftArm.writeMicroseconds(leftServoVal);
+  rightArm.writeMicroseconds(rightServoVal);
+  rollServo.writeMicroseconds(rollServoVal);
+  tiltServo.writeMicroseconds(tiltServoVal);
 
   setTreadDirection(LEFT_MOTOR, CW);
   setTreadDirection(RIGHT_MOTOR, CW);
-  setTreadSpeed(LEFT_MOTOR, 128);
-  setTreadSpeed(RIGHT_MOTOR, 128);
+  setTreadSpeed(LEFT_MOTOR, 0);
+  setTreadSpeed(RIGHT_MOTOR, 0);
+
   
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
+    strip.setPixelColor(0, strip.Color(255, 255, 255));   //set all pixels to off
+  strip.show(); // Initialize all pixels to 'off'
+
+
+
+  
+//  leftArm.attach(LEFT_ARM_PIN);
+//  rightArm.attach(RIGHT_ARM_PIN);
+//  rollServo.attach(TILT_PIN);
+//  tiltServo.attach(ROLL_PIN);
+//
+//  leftArm.writeMicroseconds(1500);
+//  rightArm.writeMicroseconds(1500);
+//  rollServo.writeMicroseconds(1500);
+//  tiltServo.writeMicroseconds(1500);
+//  delay(1000);
+//  
+//  leftArm.writeMicroseconds(600);
+//  rightArm.writeMicroseconds(2400);
+//  rollServo.writeMicroseconds(1700);
+//  tiltServo.writeMicroseconds(1300);
+//  delay(2000);
+//  
+//  leftArm.writeMicroseconds(2400);
+//  rightArm.writeMicroseconds(600);
+//  rollServo.writeMicroseconds(1300);
+//  tiltServo.writeMicroseconds(1700);
+//  delay(1000);
+//  leftArm.writeMicroseconds(1500);
+//  rightArm.writeMicroseconds(1500);
+//  rollServo.writeMicroseconds(1500);
+//  tiltServo.writeMicroseconds(1500);
+
 }
 
+int servoSpeed = 50;
+int servoMin = 600;
+int servoMax = 2400;
 void loop()
 {
+
+
+   if(command.ReadMsgs() > 0)
+   {
+      if((command.walkV) > 5   )
+      {
+              
   
+        
+        int tempLeftSpeed = map(command.walkV, 0, 128, 0, 255);
+        int tempRightSpeed = map(command.walkV, 0, 128, 0, 255);
+
+        
+           if((command.walkH) > 15   )
+          {
+            tempLeftSpeed = tempLeftSpeed - map(command.walkV, 0, 128, 0, 255);
+          }
+
+          else if((command.walkH) < -15   )
+          {
+            tempRightSpeed = tempRightSpeed - map(command.walkV, 0, -128, 0, 255);
+
+          }
+
+          
+        tempRightSpeed = max(0, tempRightSpeed);
+        tempRightSpeed = min(255, tempRightSpeed); 
+        tempLeftSpeed = max(0, tempLeftSpeed);
+        tempLeftSpeed = min(255, tempLeftSpeed); 
+        
+
+        
+        setTreadDirection(LEFT_MOTOR, CCW);
+        setTreadSpeed(LEFT_MOTOR, tempLeftSpeed);
+        setTreadDirection(RIGHT_MOTOR, CCW);
+        setTreadSpeed(RIGHT_MOTOR, tempRightSpeed );
+      }
+      else if((command.walkV < -5))
+      {
+        setTreadDirection(RIGHT_MOTOR, STOP);
+        setTreadDirection(LEFT_MOTOR, STOP);
+        
+      }
+      else
+      {
+        setTreadDirection(RIGHT_MOTOR, STOP);
+        setTreadDirection(LEFT_MOTOR, STOP);
+
+      
+      }
+      
+
+
+
+      
+
+      if((command.lookV) > 25 || (command.lookV < -25) )
+      {
+        tiltServoVal = tiltServoVal +(map(command.lookV, -128, 128, -servoSpeed, servoSpeed));
+
+        tiltServoVal = max(servoMin, tiltServoVal);
+        tiltServoVal = min(servoMax, tiltServoVal); 
+        tiltServo.writeMicroseconds(tiltServoVal);
+      }
+
+
+
+
+      if((command.lookH) > 20 || (command.lookH< -25) )
+      {
+        rollServoVal = rollServoVal -(map(command.lookH, -128, 128, -servoSpeed, servoSpeed));
+
+        rollServoVal = max(servoMin, rollServoVal);
+        rollServoVal = min(servoMax, rollServoVal); 
+        rollServo.writeMicroseconds(rollServoVal);
+      }
+
+     if(command.buttons&BUT_LT)
+     { 
+      leftServoVal = leftServoVal - servoSpeed;
+      leftServoVal = max(servoMin, leftServoVal);
+      leftServoVal = min(servoMax, leftServoVal); 
+      leftArm.writeMicroseconds(leftServoVal); 
+
+     }
+
+
+     if(command.buttons&BUT_RT)
+     { 
+      rightServoVal = rightServoVal + servoSpeed;
+      rightServoVal = max(servoMin, rightServoVal);
+      rightServoVal = min(servoMax, rightServoVal); 
+      rightArm.writeMicroseconds(rightServoVal);
+
+     }
+
+     if(command.buttons&BUT_L6)
+     { 
+      leftServoVal = leftServoVal + servoSpeed;
+      leftServoVal = max(servoMin, leftServoVal);
+      leftServoVal = min(servoMax, leftServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+
+     }
+
+
+     if(command.buttons&BUT_R1)
+     { 
+      rightServoVal = rightServoVal - servoSpeed;
+      rightServoVal = max(servoMin, rightServoVal);
+      rightServoVal = min(servoMax, rightServoVal); 
+      rightArm.writeMicroseconds(rightServoVal);
+
+     }
+
+
+
+    
+   }
+
+   
 }
 
 
@@ -122,12 +297,12 @@ void loop()
 
 void setTreadDirection(int motor, int motor_direction)
 {
-  if(motor_direction = CCW)
+  if(motor_direction == CCW)
   {
     digitalWrite(TREAD_PINS[motor][DIR_1_PIN], HIGH);
     digitalWrite(TREAD_PINS[motor][DIR_2_PIN], LOW);
   }
-  else if(motor_direction = CW )
+  else if(motor_direction == CW )
   {
     digitalWrite(TREAD_PINS[motor][DIR_1_PIN], LOW);
     digitalWrite(TREAD_PINS[motor][DIR_2_PIN], HIGH);
