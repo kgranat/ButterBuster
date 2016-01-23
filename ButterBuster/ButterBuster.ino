@@ -88,6 +88,14 @@ int rightTreadDir;
 int leftTreadSpeed;
 int rightTreadSpeed;
 
+int ledState;
+
+int servoSpeed = 100;
+int servoMin = 600;
+int servoMax = 2400;
+
+int roboDir = STOP;
+
 void setup()
 {
 //   mp3.begin(9600);
@@ -132,6 +140,7 @@ Serial.begin(38400);
     strip.setPixelColor(0, strip.Color(255, 255, 255));   //set all pixels to off
   strip.show(); // Initialize all pixels to 'off'
 
+  rainbow(5);
 
 
   
@@ -164,9 +173,7 @@ Serial.begin(38400);
 
 }
 
-int servoSpeed = 50;
-int servoMin = 600;
-int servoMax = 2400;
+
 void loop()
 {
 
@@ -175,6 +182,13 @@ void loop()
    {
       if((command.walkV) > 15   )
       {
+        if(roboDir != CW)
+        {
+          strip.setPixelColor(0, strip.Color(0, 255, 0));   //set all pixels to off
+          strip.show(); // Initialize all pixels to 'off'
+          roboDir = CW;
+        }
+
         int tempLeftSpeed = map(command.walkV, 0, 128, 0, 255);
         int tempRightSpeed = map(command.walkV, 0, 128, 0, 255);
 
@@ -240,6 +254,15 @@ void loop()
       }
       else if((command.walkV < -15))
       {   
+        
+        if(roboDir != CCW)
+        {
+          strip.setPixelColor(0, strip.Color(0, 0, 255));   //set all pixels to off
+          strip.show(); // Initialize all pixels to 'off'
+          roboDir = CCW;
+        }
+
+
         int tempLeftSpeed = map(command.walkV, 0, -128, 0, 255);
         int tempRightSpeed = map(command.walkV, 0, -128, 0, 255);
 
@@ -276,6 +299,13 @@ void loop()
         if(command.walkH > 90)
         {
         
+        if(roboDir != CW)
+        {
+          strip.setPixelColor(0, strip.Color(0, 255, 0));   //set all pixels to off
+          strip.show(); // Initialize all pixels to 'off'
+          roboDir = CW;
+        }
+
           setTreadDirection(LEFT_MOTOR, CW);
           setTreadSpeed(LEFT_MOTOR, 255);
           setTreadDirection(RIGHT_MOTOR, CCW);
@@ -283,7 +313,14 @@ void loop()
         }
         else if(command.walkH < -90)
         {
-        
+            
+            if(roboDir != CCW)
+            {
+              strip.setPixelColor(0, strip.Color(0, 0, 255));   //set all pixels to off
+              strip.show(); // Initialize all pixels to 'off'
+              roboDir = CCW;
+            }
+
           setTreadDirection(LEFT_MOTOR, CCW);
           setTreadSpeed(LEFT_MOTOR, 255);
           setTreadDirection(RIGHT_MOTOR, CW);
@@ -291,8 +328,17 @@ void loop()
         }
         else
         {
-        setTreadDirection(RIGHT_MOTOR, STOP);
-        setTreadDirection(LEFT_MOTOR, STOP);
+          
+        if(roboDir != STOP)
+        {
+          strip.setPixelColor(0, strip.Color(255, 0, 0));   //set all pixels to off
+          strip.show(); // Initialize all pixels to 'off'
+          roboDir = STOP;
+        }
+
+
+          setTreadDirection(RIGHT_MOTOR, STOP);
+          setTreadDirection(LEFT_MOTOR, STOP);
         }
       
       }
@@ -327,6 +373,8 @@ void loop()
       leftServoVal = max(servoMin, leftServoVal);
       leftServoVal = min(servoMax, leftServoVal); 
       leftArm.writeMicroseconds(leftServoVal); 
+      ledState = !ledState;
+      digitalWrite(LED1_PIN, ledState);
 
      }
 
@@ -337,6 +385,8 @@ void loop()
       rightServoVal = max(servoMin, rightServoVal);
       rightServoVal = min(servoMax, rightServoVal); 
       rightArm.writeMicroseconds(rightServoVal);
+      ledState = !ledState;
+      digitalWrite(LED1_PIN, ledState);
 
      }
 
@@ -346,6 +396,8 @@ void loop()
       leftServoVal = max(servoMin, leftServoVal);
       leftServoVal = min(servoMax, leftServoVal);
       leftArm.writeMicroseconds(leftServoVal); 
+      ledState = !ledState;
+      digitalWrite(LED1_PIN, ledState);
 
      }
 
@@ -356,6 +408,97 @@ void loop()
       rightServoVal = max(servoMin, rightServoVal);
       rightServoVal = min(servoMax, rightServoVal); 
       rightArm.writeMicroseconds(rightServoVal);
+      ledState = !ledState;
+      digitalWrite(LED1_PIN, ledState);
+
+     }
+
+     if(command.buttons&BUT_R2)
+     { 
+      leftServoVal = servoMax;
+      rightServoVal = servoMin;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+      
+
+     }
+     if(command.buttons&BUT_R3)
+     { 
+        
+      leftServoVal = 1500;
+      rightServoVal = 1500;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+
+
+     }
+     if(command.buttons&BUT_L4)
+     { 
+
+      
+      tiltServoVal = 1500;
+      rollServoVal = 1500;
+      tiltServo.writeMicroseconds(tiltServoVal);
+      rollServo.writeMicroseconds(rollServoVal); 
+
+      
+    
+      leftServoVal = 1500;
+      rightServoVal = 1500;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+      delay(250);     
+      leftServoVal = 2000;
+      rightServoVal = 2000;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+      delay(250);
+      leftServoVal = 1000;
+      rightServoVal = 1000;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+      delay(250);
+    
+      leftServoVal = 1500;
+      rightServoVal = 1500;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+      delay(250);   
+
+      
+      
+      rollServoVal = 1700;
+      rollServo.writeMicroseconds(rollServoVal); 
+      delay(400);   
+      rollServoVal = 1300;
+      rollServo.writeMicroseconds(rollServoVal); 
+      delay(400);   
+      rollServoVal = 1500;
+      rollServo.writeMicroseconds(rollServoVal); 
+      delay(450);   
+      
+      
+      tiltServoVal = 1400;
+      tiltServo.writeMicroseconds(tiltServoVal); 
+      delay(100);   
+      rollServoVal = 1600;
+      tiltServo.writeMicroseconds(tiltServoVal); 
+      delay(100);   
+      tiltServoVal = 1500;
+      tiltServo.writeMicroseconds(tiltServoVal); 
+      //delay(250);   
+      
+
+
+     }
+     if(command.buttons&BUT_L5)
+     { 
+    
+      leftServoVal = servoMin;
+      rightServoVal = servoMax;
+      rightArm.writeMicroseconds(rightServoVal);
+      leftArm.writeMicroseconds(leftServoVal); 
+
 
      }
 
@@ -395,6 +538,37 @@ void setTreadSpeed(int motor, int motorSpeed)
   analogWrite(TREAD_PINS[motor][PWM_PIN], motorSpeed);
 }
 
+
+
+
+
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) {
+    for(i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    strip.show();
+    delay(wait);
+  }
+}
+
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if(WheelPos < 170) {
+    WheelPos -= 85;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
 
 
 
