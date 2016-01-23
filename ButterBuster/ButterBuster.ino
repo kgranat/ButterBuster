@@ -173,29 +173,19 @@ void loop()
 
    if(command.ReadMsgs() > 0)
    {
-      if((command.walkV) > 5   )
+      if((command.walkV) > 15   )
       {
-              
-  
-        
         int tempLeftSpeed = map(command.walkV, 0, 128, 0, 255);
         int tempRightSpeed = map(command.walkV, 0, 128, 0, 255);
 
         
-           if((command.walkH) > 15   )
+           if((command.walkH) > 30   )
           {
-            tempLeftSpeed = tempLeftSpeed - map(command.walkV, 0, 128, 0, 255);
-          }
-
-          else if((command.walkH) < -15   )
-          {
-            tempRightSpeed = tempRightSpeed - map(command.walkV, 0, -128, 0, 255);
-
-          }
-
-          
+            tempLeftSpeed = 0;
+            tempRightSpeed = 200;
+            
         tempRightSpeed = max(0, tempRightSpeed);
-        tempRightSpeed = min(255, tempRightSpeed); 
+        tempRightSpeed = min(255, tempRightSpeed);  
         tempLeftSpeed = max(0, tempLeftSpeed);
         tempLeftSpeed = min(255, tempLeftSpeed); 
         
@@ -205,29 +195,114 @@ void loop()
         setTreadSpeed(LEFT_MOTOR, tempLeftSpeed);
         setTreadDirection(RIGHT_MOTOR, CCW);
         setTreadSpeed(RIGHT_MOTOR, tempRightSpeed );
+
+        
+          }
+
+          else if((command.walkH) < -30   )
+          {
+            tempRightSpeed = 0;
+            tempLeftSpeed = 200;
+
+            
+        tempRightSpeed = max(0, tempRightSpeed);
+        tempRightSpeed = min(255, tempRightSpeed);  
+        tempLeftSpeed = max(0, tempLeftSpeed);
+        tempLeftSpeed = min(255, tempLeftSpeed); 
+        
+
+        
+
+        
+
+          }
+
+          else
+          {
+
+            
+         tempLeftSpeed = map(command.walkV, 0, 128, 0, 255);
+         tempRightSpeed = map(command.walkV, 0, 128, 0, 255);
+        
+            
+   
+          }
+
+          
+              
+        setTreadDirection(LEFT_MOTOR, CCW);
+        setTreadSpeed(LEFT_MOTOR, tempLeftSpeed);
+        setTreadDirection(RIGHT_MOTOR, CCW);
+        setTreadSpeed(RIGHT_MOTOR, tempRightSpeed );
+  
+
+        
       }
-      else if((command.walkV < -5))
-      {
-        setTreadDirection(RIGHT_MOTOR, STOP);
-        setTreadDirection(LEFT_MOTOR, STOP);
+      else if((command.walkV < -15))
+      {   
+        int tempLeftSpeed = map(command.walkV, 0, -128, 0, 255);
+        int tempRightSpeed = map(command.walkV, 0, -128, 0, 255);
+
+        
+           if((command.walkH) > 30   )
+          {
+            tempLeftSpeed = 0;
+            tempRightSpeed = 255;
+          }
+
+          else if((command.walkH) < -30   )
+          {
+            tempRightSpeed = 0;
+            tempLeftSpeed = 255;
+
+          }
+
+          
+        tempRightSpeed = max(0, tempRightSpeed);
+        tempRightSpeed = min(255, tempRightSpeed);  
+        tempLeftSpeed = max(0, tempLeftSpeed);
+        tempLeftSpeed = min(255, tempLeftSpeed); 
+        
+
+        
+        setTreadDirection(LEFT_MOTOR, CW);
+        setTreadSpeed(LEFT_MOTOR, tempLeftSpeed);
+        setTreadDirection(RIGHT_MOTOR, CW);
+        setTreadSpeed(RIGHT_MOTOR, tempRightSpeed );
         
       }
       else
       {
+        if(command.walkH > 90)
+        {
+        
+          setTreadDirection(LEFT_MOTOR, CW);
+          setTreadSpeed(LEFT_MOTOR, 255);
+          setTreadDirection(RIGHT_MOTOR, CCW);
+          setTreadSpeed(RIGHT_MOTOR, 255 );
+        }
+        else if(command.walkH < -90)
+        {
+        
+          setTreadDirection(LEFT_MOTOR, CCW);
+          setTreadSpeed(LEFT_MOTOR, 255);
+          setTreadDirection(RIGHT_MOTOR, CW);
+          setTreadSpeed(RIGHT_MOTOR, 255 );
+        }
+        else
+        {
         setTreadDirection(RIGHT_MOTOR, STOP);
         setTreadDirection(LEFT_MOTOR, STOP);
-
+        }
       
       }
-      
-
 
 
       
 
       if((command.lookV) > 25 || (command.lookV < -25) )
       {
-        tiltServoVal = tiltServoVal +(map(command.lookV, -128, 128, -servoSpeed, servoSpeed));
+        tiltServoVal = tiltServoVal +(map(command.lookV, -128, 128, servoSpeed, -servoSpeed));
 
         tiltServoVal = max(servoMin, tiltServoVal);
         tiltServoVal = min(servoMax, tiltServoVal); 
