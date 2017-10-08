@@ -502,27 +502,35 @@ void loop()
         leftServoVal = servoMin;
         rightServoVal = servoMax;
         tiltServoVal = tiltServoMax;
-        
-        tiltServo.writeMicroseconds(tiltServoVal); 
-    
+      
+      //back and prop up
+      tiltServo.writeMicroseconds(tiltServoVal); 
       rightArm.writeMicroseconds(rightServoVal);
       leftArm.writeMicroseconds(leftServoVal); 
       rollServo.writeMicroseconds(rollServoVal); 
       delay(500);
 
-  
-        rollServoVal = rollServoMin;
+        rollServoVal = 1100;
         leftServoVal = servoMax;
       
-      
+
+      //rol side setup arm      
       leftArm.writeMicroseconds(leftServoVal); 
       rollServo.writeMicroseconds(rollServoVal); 
       delay(500);
+
+
+      for(int i = tiltServoMax; i > 1500; i--)
+      {
+          tiltServoVal = i;
+          tiltServo.writeMicroseconds(tiltServoVal); 
+          delay(3);
+      }
+
         
         tiltServoVal = 1500;
         rightServoVal = servoMin;
         
-        tiltServo.writeMicroseconds(tiltServoVal); 
         rightArm.writeMicroseconds(rightServoVal);
         
         rollServoVal = 1500;
