@@ -40,6 +40,16 @@
 #include <Servo.h>
 #include <Commander.h>
 #include <Adafruit_NeoPixel.h>
+#include "Arduino.h"
+#include "SoftwareSerial.h"
+#include "DFRobotDFPlayerMini.h"
+//a0 14
+//a1 15
+//a216
+//a3 17
+SoftwareSerial mySoftwareSerial(16, 17); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+void printDetail(uint8_t type, int value);
 
 
 Servo leftWheel, rightWheel;
@@ -48,7 +58,6 @@ Servo leftArm, rightArm;
 
 Commander command = Commander();  //start commander object
 
-SoftwareSerial mp3(2, 3);//software serial 
 
 
 const int LEFT_ARM_PIN = 9;
@@ -89,13 +98,29 @@ int leftTreadSpeed;
 int rightTreadSpeed;
 
 int ledState;
+int tiltServoSpeed = 50;
 
 int servoSpeed = 100;
 int servoMin = 600;
 int servoMax = 2400;
 
+
+
+int tiltServoMin = 600;
+int tiltServoMax = 2300;
+//int tiltServoMin = 600;
+//int tiltServoMax = 1600;
+
+
+int rollServoMin = 1200;
+int rollServoMax = 1800;
+
+
 int roboDir = STOP;
 
+int lastCommand;
+bool taunt = false; 
+bool escape = false; 
 void setup()
 {
 //   mp3.begin(9600);
@@ -108,6 +133,9 @@ void setup()
 //   next();
 
 Serial.begin(38400); 
+
+  mySoftwareSerial.begin(9600);
+  
   leftArm.attach(LEFT_ARM_PIN);
   rightArm.attach(RIGHT_ARM_PIN);
   rollServo.attach(TILT_PIN);
@@ -140,6 +168,19 @@ Serial.begin(38400);
     strip.setPixelColor(0, strip.Color(255, 255, 255));   //set all pixels to off
   strip.show(); // Initialize all pixels to 'off'
 
+
+  
+  if (!myDFPlayer.begin(mySoftwareSerial)) {  //Use softwareSerial to communicate with mp3.
+
+
+  }
+
+  
+  myDFPlayer.volume(10);  //Set volume value. From 0 to 30
+  myDFPlayer.play(1);  //Play the first mp3
+
+
+  
   rainbow(5);
 
 
@@ -170,6 +211,8 @@ Serial.begin(38400);
 //  rightArm.writeMicroseconds(1500);
 //  rollServo.writeMicroseconds(1500);
 //  tiltServo.writeMicroseconds(1500);
+
+
 
 }
 
@@ -348,10 +391,10 @@ void loop()
 
       if((command.lookV) > 25 || (command.lookV < -25) )
       {
-        tiltServoVal = tiltServoVal +(map(command.lookV, -128, 128, servoSpeed, -servoSpeed));
+        tiltServoVal = tiltServoVal +(map(command.lookV, -128, 128, tiltServoSpeed, -tiltServoSpeed));
 
-        tiltServoVal = max(servoMin, tiltServoVal);
-        tiltServoVal = min(servoMax, tiltServoVal); 
+        tiltServoVal = max(tiltServoMin, tiltServoVal);
+        tiltServoVal = min(tiltServoMax, tiltServoVal); 
         tiltServo.writeMicroseconds(tiltServoVal);
       }
 
@@ -362,11 +405,31 @@ void loop()
       {
         rollServoVal = rollServoVal -(map(command.lookH, -128, 128, -servoSpeed, servoSpeed));
 
-        rollServoVal = max(servoMin, rollServoVal);
-        rollServoVal = min(servoMax, rollServoVal); 
+        rollServoVal = max(rollServoMin, rollServoVal);
+        rollServoVal = min(rollServoMax, rollServoVal); 
         rollServo.writeMicroseconds(rollServoVal);
       }
 
+
+
+
+
+
+     if((command.buttons&BUT_LT) && (command.buttons&BUT_L6))
+     { 
+      
+        myDFPlayer.next();  //Play next mp3 every 3 second.
+     }
+
+
+     if((command.buttons&BUT_RT) && (command.buttons&BUT_R1))
+     { 
+      
+        myDFPlayer.previous();  //Play next mp3 every 3 second.
+     }
+
+
+     
      if(command.buttons&BUT_LT)
      { 
       leftServoVal = leftServoVal - servoSpeed;
@@ -375,6 +438,8 @@ void loop()
       leftArm.writeMicroseconds(leftServoVal); 
       ledState = !ledState;
       digitalWrite(LED1_PIN, ledState);
+      taunt = false;
+      escape = false;
 
      }
 
@@ -387,6 +452,8 @@ void loop()
       rightArm.writeMicroseconds(rightServoVal);
       ledState = !ledState;
       digitalWrite(LED1_PIN, ledState);
+      taunt = false;
+      escape = false;
 
      }
 
@@ -413,6 +480,12 @@ void loop()
 
      }
 
+
+
+
+
+     
+
      if(command.buttons&BUT_R2)
      { 
       leftServoVal = servoMax;
@@ -422,17 +495,49 @@ void loop()
       
 
      }
-     if(command.buttons&BUT_R3)
+     if(command.buttons&BUT_R3 && (escape == false))
      { 
+
+        rollServoVal = 1500;
+        leftServoVal = servoMin;
+        rightServoVal = servoMax;
+        tiltServoVal = tiltServoMax;
         
-      leftServoVal = 1500;
-      rightServoVal = 1500;
+        tiltServo.writeMicroseconds(tiltServoVal); 
+    
       rightArm.writeMicroseconds(rightServoVal);
       leftArm.writeMicroseconds(leftServoVal); 
+      rollServo.writeMicroseconds(rollServoVal); 
+      delay(500);
+
+  
+        rollServoVal = rollServoMin;
+        leftServoVal = servoMax;
+      
+      
+      leftArm.writeMicroseconds(leftServoVal); 
+      rollServo.writeMicroseconds(rollServoVal); 
+      delay(500);
+        
+        tiltServoVal = 1500;
+        rightServoVal = servoMin;
+        
+        tiltServo.writeMicroseconds(tiltServoVal); 
+        rightArm.writeMicroseconds(rightServoVal);
+        
+        rollServoVal = 1500;
+
+         rollServo.writeMicroseconds(rollServoVal); 
+        
+//      leftServoVal = 1500;
+//      rightServoVal = 1500;
+//      rightArm.writeMicroseconds(rightServoVal);
+//      leftArm.writeMicroseconds(leftServoVal); 
 
 
+      escape = true;
      }
-     if(command.buttons&BUT_L4)
+     if((command.buttons&BUT_L4 ) && (taunt == false))
      { 
 
       
@@ -489,7 +594,11 @@ void loop()
       //delay(250);   
       
 
-
+      taunt = true;
+     }
+     else 
+     {
+      //taunt = false;
      }
      if(command.buttons&BUT_L5)
      { 
@@ -503,7 +612,7 @@ void loop()
      }
 
 
-
+     lastCommand = command.buttons;
     
    }
 
@@ -573,125 +682,4 @@ uint32_t Wheel(byte WheelPos) {
 
 
 
-
-
-//                                                 /$$                                /$$$$$$                                      /$$           /$$                 /$$                                                /$$$$$$                                 /$$     /$$                              
-//                                                | $$                               /$$__  $$                                    |__/          | $$                | $$                                               /$$__  $$                               | $$    |__/                              
-//    /$$$$$$$  /$$$$$$   /$$$$$$   /$$$$$$   /$$$$$$$       /$$$$$$/$$$$   /$$$$$$ |__/  \ $$        /$$$$$$$  /$$$$$$   /$$$$$$  /$$  /$$$$$$ | $$        /$$$$$$ | $$  /$$$$$$  /$$   /$$  /$$$$$$   /$$$$$$       | $$  \__//$$   /$$ /$$$$$$$   /$$$$$$$ /$$$$$$   /$$  /$$$$$$  /$$$$$$$   /$$$$$$$
-//   /$$_____/ /$$__  $$ /$$__  $$ /$$__  $$ /$$__  $$      | $$_  $$_  $$ /$$__  $$   /$$$$$/       /$$_____/ /$$__  $$ /$$__  $$| $$ |____  $$| $$       /$$__  $$| $$ |____  $$| $$  | $$ /$$__  $$ /$$__  $$      | $$$$   | $$  | $$| $$__  $$ /$$_____/|_  $$_/  | $$ /$$__  $$| $$__  $$ /$$_____/
-//  |  $$$$$$ | $$$$$$$$| $$$$$$$$| $$$$$$$$| $$  | $$      | $$ \ $$ \ $$| $$  \ $$  |___  $$      |  $$$$$$ | $$$$$$$$| $$  \__/| $$  /$$$$$$$| $$      | $$  \ $$| $$  /$$$$$$$| $$  | $$| $$$$$$$$| $$  \__/      | $$_/   | $$  | $$| $$  \ $$| $$        | $$    | $$| $$  \ $$| $$  \ $$|  $$$$$$ 
-//   \____  $$| $$_____/| $$_____/| $$_____/| $$  | $$      | $$ | $$ | $$| $$  | $$ /$$  \ $$       \____  $$| $$_____/| $$      | $$ /$$__  $$| $$      | $$  | $$| $$ /$$__  $$| $$  | $$| $$_____/| $$            | $$     | $$  | $$| $$  | $$| $$        | $$ /$$| $$| $$  | $$| $$  | $$ \____  $$
-//   /$$$$$$$/|  $$$$$$$|  $$$$$$$|  $$$$$$$|  $$$$$$$      | $$ | $$ | $$| $$$$$$$/|  $$$$$$/       /$$$$$$$/|  $$$$$$$| $$      | $$|  $$$$$$$| $$      | $$$$$$$/| $$|  $$$$$$$|  $$$$$$$|  $$$$$$$| $$            | $$     |  $$$$$$/| $$  | $$|  $$$$$$$  |  $$$$/| $$|  $$$$$$/| $$  | $$ /$$$$$$$/
-//  |_______/  \_______/ \_______/ \_______/ \_______/      |__/ |__/ |__/| $$____/  \______/       |_______/  \_______/|__/      |__/ \_______/|__/      | $$____/ |__/ \_______/ \____  $$ \_______/|__/            |__/      \______/ |__/  |__/ \_______/   \___/  |__/ \______/ |__/  |__/|_______/ 
-//                                                                        | $$                                                                            | $$                     /$$  | $$                                                                                                             
-//                                                                        | $$                                                                            | $$                    |  $$$$$$/                                                                                                             
-//                                                                        |__/                                                                            |__/                     \______/                                                                                                              
-//Set the music index to play, the index is decided by the input sequence
-//of the music;
-//hbyte: the high byte of the index;
-//lbyte: the low byte of the index;
-boolean SetMusicPlay(uint8_t hbyte,uint8_t lbyte)
-{
-    mp3.write(0x7E);
-    mp3.write(0x04);
-    mp3.write(0xA0);
-    mp3.write(hbyte);
-    mp3.write(lbyte);
-    mp3.write(0x7E);
-    delay(10);
-    while(mp3.available())
-    {
-        if (0xA0==mp3.read())
-        return true;
-        else
-        return false;
-    }
-}
-// Pause on/off  the current music
-boolean PauseOnOffCurrentMusic(void)
-{
-    mp3.write(0x7E);
-    mp3.write(0x02);
-    mp3.write(0xA3);
-    mp3.write(0x7E);
-    delay(10);
-    while(mp3.available())
-    {
-        if (0xA3==mp3.read())
-        return true;
-        else
-        return false;
-    }
-}
- 
-//Set the volume, the range is 0x00 to 0x1F
-boolean SetVolume(uint8_t volume)
-{
-    mp3.write(0x7E);
-    mp3.write(0x03);
-    mp3.write(0xA7);
-    mp3.write(volume);
-    mp3.write(0x7E);
-    delay(10);
-    while(mp3.available())
-    {
-        if (0xA7==mp3.read())
-        return true;
-        else
-        return false;
-    }
-}
- 
-boolean SetPlayMode(uint8_t playmode)
-{
-    if (((playmode==0x00)|(playmode==0x01)|(playmode==0x02)|(playmode==0x03))==false)
-    {
-        Serial.println("PlayMode Parameter Error! ");
-        return false;
-    }
-    mp3.write(0x7E);
-    mp3.write(0x03);
-    mp3.write(0xA9);
-    mp3.write(playmode);
-    mp3.write(0x7E);
-    delay(10);
-    while(mp3.available())
-    {
-        if (0xA9==mp3.read())
-        return true;
-        else
-        return false;
-    }
- }
-
- void next()
- {
-    mp3.write(0x7E);
-    mp3.write(0x02);
-    mp3.write(0xA5);
-    mp3.write(0x7E);
-    delay(10);
-
-
-
- 
- }
-
- void copy()
- {
-    mp3.write(0x7E);
-    mp3.write(0x03);
-    mp3.write(0xAA);
-    mp3.write(byte(0));
-    mp3.write(0x7E);
-    delay(10);
-
-    while(mp3.available())
-    {
-        Serial.println(mp3.read());
-    }
-
-
- 
- }
 
